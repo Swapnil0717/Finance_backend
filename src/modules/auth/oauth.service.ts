@@ -29,11 +29,15 @@ export const googleLogin = async (idToken: string) => {
         provider: "google",
         providerId: payload.sub,
         isEmailVerified: true,
+        role: "ANALYST",
       },
     });
   }
 
-  const jwtPayload = { userId: user.id, role: user.role };
+  const jwtPayload = {
+    id: user.id,
+    role: user.role,
+  };
 
   const accessToken = generateAccessToken(jwtPayload);
   const refreshToken = generateRefreshToken(jwtPayload);

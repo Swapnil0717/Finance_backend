@@ -1,39 +1,92 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { env } from "../config/env";
 import prisma from "../config/prisma";
-import { AuthRequest } from "./auth.middleware";
 
-export const checkRecordOwnership = async (
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
+
+export const authMiddleware = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const recordId = req.params.id;
+    const authHeader = req.headers.authorization;
 
-    const record = await prisma.financialRecord.findFirst({
-      where: {
-        id: recordId,
-        isDeleted: false,
-      },
+    //  No header
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: "Authorization header missing",
+      });
+    }
+
+    // Invalid format
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authorization format",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    // No token
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token missing",
+      });
+    }
+
+    // VERIFY TOKEN
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as {
+      id: string;
+      role: string;
+    };
+
+    // Missing payload data
+    if (!decoded?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    // FETCH USER FROM DB
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
       select: {
-        createdById: true,
+        id: true,
+        role: true,
+        isActive: true,
       },
     });
 
-    if (!record) {
-      return res.status(404).json({ message: "Record not found" });
+    // User not found or inactive
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found or inactive",
+      });
     }
 
-    if (req.user?.role === "ADMIN") {
-      return next();
-    }
-
-    if (record.createdById !== req.user?.id) {
-      return res.status(403).json({ message: "Access denied" });
-    }
+    // ATTACH USER
+    req.user = {
+      id: user.id,
+      role: user.role,
+    };
 
     next();
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };

@@ -1,55 +1,52 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../config/env";
 import prisma from "../config/prisma";
-
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    role: string;
-  };
-}
+import { verifyAccessToken } from "../utils/jwt";
 
 export const authMiddleware = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const header = req.headers.authorization;
 
-    if (!header) {
-      return res.status(401).json({ message: "Authorization header missing" });
-    }
-
-    if (!header.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Invalid auth format" });
+    if (!header || !header.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
     const token = header.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ message: "Token missing" });
-    }
-
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as {
-      userId: string;
-      role: string;
-    };
+    const decoded = verifyAccessToken(token);
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true },
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        role: true,
+        isActive: true,
+      },
     });
 
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found or inactive",
+      });
     }
 
-    req.user = user;
+    req.user = {
+      id: user.id,
+      role: user.role,
+    };
 
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+  } catch {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };
