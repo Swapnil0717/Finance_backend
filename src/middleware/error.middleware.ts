@@ -1,51 +1,39 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 
-type ErrorResponse = {
-  statusCode?: number;
-  message?: string;
-  errors?: any;
-};
-
 export const errorMiddleware = (
-  err: ErrorResponse,
+  err: any,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || "Internal Server Error";
-  let errors = err.errors || null;
+  let errors = null;
 
-  //  Zod Validation Error
+  // ✅ ZOD ERROR
   if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation failed";
-    errors = err.errors.map((e) => ({
+
+    errors = err.errors?.map((e) => ({
       field: e.path.join("."),
       message: e.message,
-    }));
+    })) || [];
   }
 
-  // Prisma Errors (basic handling)
-  if ((err as any).code) {
-    const prismaError = err as any;
-
-    // Unique constraint
-    if (prismaError.code === "P2002") {
-      statusCode = 409;
-      message = "Duplicate field value";
-      errors = prismaError.meta;
-    }
-
-    // Record not found
-    if (prismaError.code === "P2025") {
-      statusCode = 404;
-      message = "Record not found";
-    }
+  // ✅ CUSTOM ERROR WITH errors FIELD
+  else if (err.errors) {
+    errors = Array.isArray(err.errors)
+      ? err.errors
+      : [{ message: err.errors }];
   }
 
-  // Fallback logging (you can replace with Winston later)
+  // ✅ GENERIC ERROR (VERY IMPORTANT FIX)
+  else {
+    errors = null; // DO NOT try to map
+  }
+
   console.error("ERROR:", {
     message,
     statusCode,

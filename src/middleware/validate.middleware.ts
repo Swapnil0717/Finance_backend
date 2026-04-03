@@ -1,5 +1,5 @@
-import { ZodObject, ZodError, AnyZodObject } from "zod";
 import { Request, Response, NextFunction } from "express";
+import { ZodError, AnyZodObject } from "zod";
 
 type Schema = {
   body?: AnyZodObject;
@@ -11,17 +11,24 @@ export const validate =
   (schema: Schema) =>
   (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // Parse and overwrite request safely
+      // ✅ BODY (safe to override)
       if (schema.body) {
         req.body = schema.body.parse(req.body);
       }
 
+      // ❗ QUERY (DO NOT REASSIGN)
       if (schema.query) {
-        req.query = schema.query.parse(req.query);
+        const parsedQuery = schema.query.parse(req.query);
+
+        // mutate instead of replace
+        Object.assign(req.query, parsedQuery);
       }
 
+      // ❗ PARAMS (better to mutate too)
       if (schema.params) {
-        req.params = schema.params.parse(req.params);
+        const parsedParams = schema.params.parse(req.params);
+
+        Object.assign(req.params, parsedParams);
       }
 
       next();
@@ -30,10 +37,11 @@ export const validate =
         return next({
           statusCode: 400,
           message: "Validation failed",
-          errors: err.errors.map((e) => ({
-            field: e.path.join("."),
-            message: e.message,
-          })),
+          errors:
+            err.errors?.map((e) => ({
+              field: e.path.join("."),
+              message: e.message,
+            })) || [],
         });
       }
 

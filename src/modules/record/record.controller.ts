@@ -3,7 +3,7 @@ import { RecordService } from "./record.service";
 import { sendResponse } from "../../utils/response";
 
 export class RecordController {
-  static async create(req: Request, res: Response, next: NextFunction) {
+  static async create(req: any, res: Response, next: NextFunction) {
     try {
       const record = await RecordService.createRecord(
         req.user.id,
@@ -22,7 +22,7 @@ export class RecordController {
     }
   }
 
-  static async getAll(req: Request, res: Response, next: NextFunction) {
+  static async getAll(req: any, res: Response, next: NextFunction) {
     try {
       const result = await RecordService.getRecords(
         req.user.id,
@@ -34,14 +34,15 @@ export class RecordController {
         statusCode: 200,
         success: true,
         message: "Records fetched",
-        data: result,
+        data: result.data,
+        meta: result.meta,
       });
     } catch (err) {
       next(err);
     }
   }
 
-  static async getOne(req: Request, res: Response, next: NextFunction) {
+  static async getOne(req: any, res: Response, next: NextFunction) {
     try {
       const record = await RecordService.getRecordById(
         req.user.id,
@@ -60,7 +61,7 @@ export class RecordController {
     }
   }
 
-  static async update(req: Request, res: Response, next: NextFunction) {
+  static async update(req: any, res: Response, next: NextFunction) {
     try {
       const record = await RecordService.updateRecord(
         req.user.id,
@@ -80,7 +81,7 @@ export class RecordController {
     }
   }
 
-  static async delete(req: Request, res: Response, next: NextFunction) {
+  static async delete(req: any, res: Response, next: NextFunction) {
     try {
       await RecordService.deleteRecord(
         req.user.id,
