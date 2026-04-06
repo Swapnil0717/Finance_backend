@@ -3,16 +3,20 @@ import { Prisma, Role } from "@prisma/client";
 import { getPagination } from "../../utils/pagination";
 
 export class RecordService {
-  // =========================
+
   // CREATE RECORD
-  // =========================
-  static async createRecord(
-    userId: string,
-    role: Role,
-    data: any
-  ) {
+  static async createRecord(userId: string, role: Role, data: any) {
+    let targetUserId = userId;
+
     if (role === "VIEWER") {
       throw { statusCode: 403, message: "Access denied" };
+    }
+
+    if (role === "ADMIN") {
+      if (!data.userId) {
+        throw { statusCode: 400, message: "userId is required for admin" };
+      }
+      targetUserId = data.userId;
     }
 
     return prisma.financialRecord.create({
@@ -22,33 +26,21 @@ export class RecordService {
         category: data.category,
         note: data.note,
         date: new Date(data.date),
-        createdBy: {
-          connect: { id: userId },
-        },
+        createdById: targetUserId,
       },
     });
   }
 
-  // =========================
-  // GET ALL RECORDS (FILTER + PAGINATION)
-  // =========================
-  static async getRecords(
-    userId: string,
-    role: Role,
-    filters: any
-  ) {
-    if (role === "VIEWER") {
-      throw { statusCode: 403, message: "Access denied" };
-    }
-
+  // GET ALL RECORDS
+  static async getRecords(userId: string, role: Role, filters: any) {
     const {
+      userId: targetUserId,
       type,
       category,
       startDate,
       endDate,
     } = filters;
 
-    // ✅ CRITICAL FIX: ALWAYS CAST TO NUMBER
     const pageNumber = Number(filters.page) || 1;
     const limitNumber = Number(filters.limit) || 10;
 
@@ -57,14 +49,10 @@ export class RecordService {
       limit: limitNumber,
     });
 
-    // =========================
-    // BUILD FILTER
-    // =========================
     const where: Prisma.FinancialRecordWhereInput = {
       isDeleted: false,
 
       ...(type && { type }),
-
       ...(category && { category }),
 
       ...(startDate || endDate
@@ -77,23 +65,48 @@ export class RecordService {
         : {}),
     };
 
-    // =========================
-    // RBAC FILTER
-    // =========================
-    if (role === "ANALYST") {
+    if (role === "VIEWER") {
       where.createdById = userId;
     }
 
-    // ADMIN → sees all records
+    else if (role === "ANALYST") {
+      if (!targetUserId) {
+        throw {
+          statusCode: 400,
+          message: "userId is required for analyst",
+        };
+      }
 
-    // =========================
-    // QUERY
-    // =========================
+      const assignment = await prisma.analystAssignment.findUnique({
+        where: {
+          analystId_userId: {
+            analystId: userId,
+            userId: targetUserId,
+          },
+        },
+      });
+
+      if (!assignment) {
+        throw {
+          statusCode: 403,
+          message: "You are not assigned to this user",
+        };
+      }
+
+      where.createdById = targetUserId;
+    }
+
+    else if (role === "ADMIN") {
+      if (targetUserId) {
+        where.createdById = targetUserId;
+      }
+    }
+
     const [data, total] = await Promise.all([
       prisma.financialRecord.findMany({
         where,
         skip,
-        take, // ✅ ALWAYS NUMBER NOW
+        take,
         orderBy: { date: "desc" },
       }),
       prisma.financialRecord.count({ where }),
@@ -109,53 +122,50 @@ export class RecordService {
     };
   }
 
-  // =========================
-  // GET SINGLE RECORD
-  // =========================
-  static async getRecordById(
-    userId: string,
-    role: Role,
-    id: string
-  ) {
-    const record = await prisma.financialRecord.findFirst({
-      where: {
-        id,
-        isDeleted: false,
-      },
+  // GET ONE
+  static async getRecordById(userId: string, role: Role, id: string) {
+    const record = await prisma.financialRecord.findUnique({
+      where: { id },
     });
 
-    if (!record) {
+    if (!record || record.isDeleted) {
       throw { statusCode: 404, message: "Record not found" };
     }
 
-    if (role === "VIEWER") {
+    if (role === "VIEWER" && record.createdById !== userId) {
       throw { statusCode: 403, message: "Access denied" };
     }
 
-    if (role === "ANALYST" && record.createdById !== userId) {
-      throw { statusCode: 403, message: "Access denied" };
+    if (role === "ANALYST") {
+      const assignment = await prisma.analystAssignment.findUnique({
+        where: {
+          analystId_userId: {
+            analystId: userId,
+            userId: record.createdById,
+          },
+        },
+      });
+
+      if (!assignment) {
+        throw { statusCode: 403, message: "Not assigned to this user" };
+      }
     }
 
     return record;
   }
 
-  // =========================
-  // UPDATE RECORD
-  // =========================
+  // UPDATE
   static async updateRecord(
     userId: string,
     role: Role,
     id: string,
     data: any
   ) {
-    const record = await prisma.financialRecord.findFirst({
-      where: {
-        id,
-        isDeleted: false,
-      },
+    const record = await prisma.financialRecord.findUnique({
+      where: { id },
     });
 
-    if (!record) {
+    if (!record || record.isDeleted) {
       throw { statusCode: 404, message: "Record not found" };
     }
 
@@ -163,8 +173,19 @@ export class RecordService {
       throw { statusCode: 403, message: "Access denied" };
     }
 
-    if (role === "ANALYST" && record.createdById !== userId) {
-      throw { statusCode: 403, message: "Access denied" };
+    if (role === "ANALYST") {
+      const assignment = await prisma.analystAssignment.findUnique({
+        where: {
+          analystId_userId: {
+            analystId: userId,
+            userId: record.createdById,
+          },
+        },
+      });
+
+      if (!assignment) {
+        throw { statusCode: 403, message: "Not assigned" };
+      }
     }
 
     return prisma.financialRecord.update({
@@ -179,22 +200,13 @@ export class RecordService {
     });
   }
 
-  // =========================
-  // DELETE RECORD (SOFT DELETE)
-  // =========================
-  static async deleteRecord(
-    userId: string,
-    role: Role,
-    id: string
-  ) {
-    const record = await prisma.financialRecord.findFirst({
-      where: {
-        id,
-        isDeleted: false,
-      },
+  // DELETE (SOFT)
+  static async deleteRecord(userId: string, role: Role, id: string) {
+    const record = await prisma.financialRecord.findUnique({
+      where: { id },
     });
 
-    if (!record) {
+    if (!record || record.isDeleted) {
       throw { statusCode: 404, message: "Record not found" };
     }
 
@@ -202,15 +214,24 @@ export class RecordService {
       throw { statusCode: 403, message: "Access denied" };
     }
 
-    if (role === "ANALYST" && record.createdById !== userId) {
-      throw { statusCode: 403, message: "Access denied" };
+    if (role === "ANALYST") {
+      const assignment = await prisma.analystAssignment.findUnique({
+        where: {
+          analystId_userId: {
+            analystId: userId,
+            userId: record.createdById,
+          },
+        },
+      });
+
+      if (!assignment) {
+        throw { statusCode: 403, message: "Not assigned" };
+      }
     }
 
     return prisma.financialRecord.update({
       where: { id },
-      data: {
-        isDeleted: true,
-      },
+      data: { isDeleted: true },
     });
   }
 }

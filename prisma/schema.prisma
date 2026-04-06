@@ -38,8 +38,13 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relations
   records         FinancialRecord[]
   tokens          Token[]
+
+  // Analyst Assignment Relations
+  assignedUsers   AnalystAssignment[] @relation("AnalystAssignments")
+  assignedAnalyst AnalystAssignment[] @relation("UserAssignments")
 
   @@index([email])
 }
@@ -64,6 +69,20 @@ model FinancialRecord {
   @@index([type])
   @@index([category])
   @@index([date])
+}
+
+model AnalystAssignment {
+  id         String @id @default(uuid())
+
+  analystId  String
+  userId     String
+
+  analyst    User   @relation("AnalystAssignments", fields: [analystId], references: [id])
+  user       User   @relation("UserAssignments", fields: [userId], references: [id])
+
+  createdAt  DateTime @default(now())
+
+  @@unique([analystId, userId])
 }
 
 model Token {

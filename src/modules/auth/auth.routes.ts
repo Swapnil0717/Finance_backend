@@ -7,6 +7,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../../validations/auth.validation";
+import passport from "../../config/passport";
 
 const router = Router();
 
@@ -28,6 +29,25 @@ router.post(
   "/reset-password",
   validate({ body: resetPasswordSchema }),
   controller.resetPassword
+);
+
+
+// 🔹 Redirect to Google
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
+
+// 🔹 Callback
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  controller.googleRedirect
 );
 
 router.post("/google", controller.googleLogin);

@@ -5,9 +5,8 @@ import { requireRole } from "../../middleware/role.middleware";
 
 const router = Router();
 
-// Only logged-in users (ANALYST / ADMIN)
 router.use(authMiddleware);
-router.use(requireRole("ANALYST", "ADMIN"));
+router.use(requireRole("ANALYST", "ADMIN", "VIEWER"));
 
 router.get("/", DashboardController.getSummary);
 

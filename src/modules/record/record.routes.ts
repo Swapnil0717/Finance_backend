@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { RecordController } from "./record.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
 
@@ -9,41 +8,42 @@ import {
   getRecordsSchema,
   recordIdSchema,
 } from "../../validations/record.validation";
+import { RecordController } from "./record.controller";
 
 const router = Router();
 
 // PROTECTED ROUTES
 router.use(authMiddleware);
 
-// CREATE
+//  CREATE 
 router.post(
   "/",
   validate(createRecordSchema),
   RecordController.create
 );
 
-// GET ALL (FILTER + PAGINATION)
+//  GET ALL
 router.get(
   "/",
   validate(getRecordsSchema),
   RecordController.getAll
 );
 
-// GET ONE
+//  GET ONE
 router.get(
   "/:id",
   validate(recordIdSchema),
   RecordController.getOne
 );
 
-// UPDATE
+//  UPDATE
 router.patch(
   "/:id",
   validate(updateRecordSchema),
   RecordController.update
 );
 
-// DELETE (SOFT)
+// DELETE
 router.delete(
   "/:id",
   validate(recordIdSchema),

@@ -17,6 +17,7 @@ const envSchema = z.object({
   EMAIL_PASS: z.string(),
 
   GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(), 
 
   APP_URL: z.string().url(),
 });

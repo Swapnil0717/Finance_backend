@@ -4,6 +4,7 @@ import authRoutes from "../modules/auth/auth.routes";
 import dashboardRoutes from "../modules/dashboard/dashboard.routes";
 import recordRoutes from "../modules/record/record.routes";
 import userRoutes from "../modules/user/user.routes";
+import assignmentRoutes from "../modules/assignment/assignment.routes";
 
 const router = Router();
 
@@ -11,6 +12,7 @@ const router = Router();
 router.use("/auth", authRoutes);
 router.use("/records", recordRoutes);
 router.use("/dashboard", dashboardRoutes);
-router.use("/users", userRoutes)
+router.use("/users", userRoutes);
+router.use("/assignments", assignmentRoutes);
 
 export default router;

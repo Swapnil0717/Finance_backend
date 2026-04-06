@@ -11,7 +11,7 @@ export const errorMiddleware = (
   let message = err.message || "Internal Server Error";
   let errors = null;
 
-  // ✅ ZOD ERROR
+  //  ZOD ERROR
   if (err instanceof ZodError) {
     statusCode = 400;
     message = "Validation failed";
@@ -22,16 +22,16 @@ export const errorMiddleware = (
     })) || [];
   }
 
-  // ✅ CUSTOM ERROR WITH errors FIELD
+  //  CUSTOM ERROR WITH errors FIELD
   else if (err.errors) {
     errors = Array.isArray(err.errors)
       ? err.errors
       : [{ message: err.errors }];
   }
 
-  // ✅ GENERIC ERROR (VERY IMPORTANT FIX)
+  // GENERIC ERROR (VERY IMPORTANT FIX)
   else {
-    errors = null; // DO NOT try to map
+    errors = null; 
   }
 
   console.error("ERROR:", {

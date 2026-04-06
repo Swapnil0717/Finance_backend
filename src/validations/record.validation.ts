@@ -3,6 +3,8 @@ import { z } from "zod";
 // CREATE
 export const createRecordSchema = {
   body: z.object({
+    userId: z.string().uuid().optional(), //  admin only
+
     amount: z
       .number({ invalid_type_error: "Amount must be a number" })
       .positive("Amount must be greater than 0"),
@@ -34,12 +36,12 @@ export const updateRecordSchema = {
 // GET ALL
 export const getRecordsSchema = {
   query: z.object({
+    userId: z.string().uuid().optional(), 
     type: z.enum(["INCOME", "EXPENSE"]).optional(),
     category: z.string().optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
 
-    // ✅ NOW ALWAYS NUMBER
     page: z.coerce.number().min(1).default(1),
     limit: z.coerce.number().min(1).max(100).default(10),
   }),

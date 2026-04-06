@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { generateAccessToken, generateRefreshToken } from "../../utils/jwt";
 import * as authService from "./auth.service";
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
@@ -72,4 +73,24 @@ export const googleLogin = async (req: Request, res: Response, next: NextFunctio
   } catch (err) {
     next(err);
   }
+};
+
+export const googleRedirect = async (req: any, res: Response) => {
+  const user = req.user;
+
+  const payload = {
+    id: user.id,
+    role: user.role,
+  };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  res.send(`
+    <h2>OAuth Success</h2>
+    <p><strong>Access Token:</strong></p>
+    <pre>${accessToken}</pre>
+    <p><strong>Refresh Token:</strong></p>
+    <pre>${refreshToken}</pre>
+  `);
 };

@@ -11,20 +11,16 @@ export const validate =
   (schema: Schema) =>
   (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // ✅ BODY (safe to override)
       if (schema.body) {
         req.body = schema.body.parse(req.body);
       }
 
-      // ❗ QUERY (DO NOT REASSIGN)
       if (schema.query) {
         const parsedQuery = schema.query.parse(req.query);
 
-        // mutate instead of replace
         Object.assign(req.query, parsedQuery);
       }
 
-      // ❗ PARAMS (better to mutate too)
       if (schema.params) {
         const parsedParams = schema.params.parse(req.params);
 

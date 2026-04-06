@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-
+import session from "express-session";
+import passport from "./config/passport";
 import routes from "./routes";
 import { authMiddleware } from "./middleware/auth.middleware";
 import { errorMiddleware } from "./middleware/error.middleware";
@@ -9,6 +10,18 @@ import { errorMiddleware } from "./middleware/error.middleware";
 dotenv.config();
 
 const app = express();
+
+
+app.use(
+  session({
+    secret: "super-secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Middlewares
 app.use(cors());
@@ -37,4 +50,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Google oauth  running on http://localhost:5000/auth/google`);
 });

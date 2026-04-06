@@ -11,6 +11,7 @@ export class DashboardController {
       const categories = await DashboardService.getCategoryTotals(id, role);
       const trends = await DashboardService.getMonthlyTrends(id, role);
       const recent = await DashboardService.getRecent(id, role);
+      const userBreakdown = await DashboardService.getUserBreakdown(id, role);
 
       sendResponse(res, {
         statusCode: 200,
@@ -21,6 +22,7 @@ export class DashboardController {
           categories,
           trends,
           recent,
+          ...(userBreakdown && { userBreakdown }),
         },
       });
     } catch (err) {

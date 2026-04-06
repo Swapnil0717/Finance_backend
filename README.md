@@ -1,42 +1,62 @@
-# 🚀 Finance Backend API
+# 🚀 Finance Data Processing & Access Control Backend
 
-A **production-ready backend system** for managing financial data, user roles, and dashboard analytics.
+A **production-ready backend system** designed for managing financial records, enforcing role-based access control (RBAC), and delivering aggregated dashboard insights.
 
-Built to demonstrate **backend architecture, RBAC (Role-Based Access Control), data processing, and clean API design**.
+This project demonstrates **backend architecture, data modeling, secure authentication, and real-world business logic implementation**.
 
 ---
 
-## 📌 Features
+## 📌 Overview
 
-### 🔐 Authentication & Authorization
+This system simulates a **finance dashboard backend** where users interact with financial data based on their role:
+
+* Store and manage financial transactions
+* Enforce strict role-based permissions
+* Provide aggregated analytics for dashboards
+* Handle authentication, authorization, and secure token flows
+
+---
+
+## ✨ Core Features
+
+### 🔐 Authentication & Security
 
 * JWT-based authentication (Access + Refresh tokens)
-* Google OAuth login
-* Email verification & password reset
-* Role-based access control (RBAC)
-
-### 👥 User Roles
-
-* **Viewer** → No access to protected APIs
-* **Analyst** → Manage own financial data
-* **Admin** → Full system access (users + all records)
+* Token persistence with expiry & revocation
+* Google OAuth login (Passport.js)
+* Email verification & password reset (Nodemailer)
 
 ---
 
-### 💰 Financial Records
+### 👥 Role-Based Access Control (RBAC)
+
+| Role    | Capabilities                      |
+| ------- | --------------------------------- |
+| Viewer  | Read-only access to own data      |
+| Analyst | Access assigned users + analytics |
+| Admin   | Full system control               |
+
+✔ Enforced at:
+
+* Route level (middleware)
+* Service level (data-level restrictions)
+
+---
+
+### 💰 Financial Records Management
 
 * Create, update, delete records
-* Soft delete support
-* Filter by:
+* Soft delete (data not permanently removed)
+* Filtering:
 
-  * Type (Income / Expense)
+  * Type (INCOME / EXPENSE)
   * Category
   * Date range
-* Pagination (production-safe)
+* Pagination support
 
 ---
 
-### 📊 Dashboard APIs
+### 📊 Dashboard & Analytics
 
 * Total income
 * Total expenses
@@ -44,13 +64,23 @@ Built to demonstrate **backend architecture, RBAC (Role-Based Access Control), d
 * Category-wise breakdown
 * Monthly trends
 * Recent transactions
+* User-level breakdown (Admin / Analyst)
+
+---
+
+### 🔄 Analyst Assignment System
+
+* Admin assigns users to analysts
+* Analysts can only access assigned users
+* Prevents unauthorized data access
 
 ---
 
 ### ✅ Validation & Error Handling
 
 * Zod-based request validation
-* Centralized error handling
+* Centralized error handling middleware
+* Consistent API response structure
 * Proper HTTP status codes
 
 ---
@@ -63,6 +93,7 @@ Built to demonstrate **backend architecture, RBAC (Role-Based Access Control), d
 * **Prisma ORM**
 * **Zod (Validation)**
 * **JWT Authentication**
+* **Passport.js (Google OAuth)**
 * **Nodemailer (Emails)**
 
 ---
@@ -72,30 +103,33 @@ Built to demonstrate **backend architecture, RBAC (Role-Based Access Control), d
 ```
 src/
 │
-├── config/        # Prisma, env, OAuth config
-├── middleware/    # Auth, validation, error handling
+├── config/         # Prisma, env, OAuth config
+├── middleware/     # Auth, RBAC, validation, error handling
 ├── modules/
-│   ├── auth/
-│   ├── user/
-│   ├── record/
-│   ├── dashboard/
+│   ├── auth/       # Authentication & token logic
+│   ├── user/       # User management (Admin)
+│   ├── record/     # Financial records
+│   ├── dashboard/  # Aggregated analytics
+│   ├── assignment/ # Analyst-user mapping
 │
-├── utils/         # JWT, hashing, pagination
-├── validations/   # Zod schemas
-├── routes/        # Main route handler
-└── server.ts      # Entry point
+├── utils/          # JWT, hashing, pagination, response helpers
+├── validations/    # Zod schemas
+├── routes/         # Route registration
+└── server.ts       # Entry point
 ```
 
 ---
 
 ## ⚙️ Setup Instructions
 
-### 1️⃣ Clone Repo
+### 1️⃣ Clone Repository
 
 ```bash
 git clone https://github.com/Swapnil0717/Finance_backend.git
-cd finance-backend
+cd Finance_backend
 ```
+
+---
 
 ### 2️⃣ Install Dependencies
 
@@ -103,16 +137,18 @@ cd finance-backend
 npm install
 ```
 
+---
+
 ### 3️⃣ Setup Environment Variables
 
-Create `.env`:
+Create `.env` file:
 
-```
+```env
 PORT=5000
 DATABASE_URL=your_postgres_url
 
-JWT_ACCESS_SECRET=your_secret
-JWT_REFRESH_SECRET=your_secret
+JWT_ACCESS_SECRET=your_access_secret
+JWT_REFRESH_SECRET=your_refresh_secret
 
 EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
@@ -120,13 +156,14 @@ EMAIL_USER=your_email
 EMAIL_PASS=your_password
 
 GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 APP_URL=http://localhost:3000
 ```
 
 ---
 
-### 4️⃣ Run Prisma
+### 4️⃣ Run Database Migrations
 
 ```bash
 npx prisma migrate dev
@@ -134,17 +171,23 @@ npx prisma migrate dev
 
 ---
 
-### 5️⃣ Start Server
+### 5️⃣ Start Development Server
 
 ```bash
 npm run dev
+```
+
+Server runs at:
+
+```
+http://localhost:5000
 ```
 
 ---
 
 ## 🔑 API Overview
 
-### Auth
+### 🔐 Auth
 
 | Method | Endpoint                |
 | ------ | ----------------------- |
@@ -153,11 +196,12 @@ npm run dev
 | POST   | `/auth/refresh`         |
 | POST   | `/auth/forgot-password` |
 | POST   | `/auth/reset-password`  |
-| POST   | `/auth/google`          |
+| GET    | `/auth/google`          |
+| GET    | `/auth/google/callback` |
 
 ---
 
-### Records
+### 💰 Records
 
 | Method | Endpoint       |
 | ------ | -------------- |
@@ -169,7 +213,7 @@ npm run dev
 
 ---
 
-### Dashboard
+### 📊 Dashboard
 
 | Method | Endpoint     |
 | ------ | ------------ |
@@ -177,7 +221,7 @@ npm run dev
 
 ---
 
-### Users (Admin Only)
+### 👥 Users (Admin Only)
 
 | Method | Endpoint            |
 | ------ | ------------------- |
@@ -187,15 +231,27 @@ npm run dev
 
 ---
 
-## 🔐 Role-Based Access Control
+### 🔗 Assignments
 
-| Action         | Viewer | Analyst | Admin   |
-| -------------- | ------ | ------- | ------- |
-| View records   | ❌      | ✅ (own) | ✅ (all) |
-| Create records | ❌      | ✅       | ✅       |
-| Update records | ❌      | ✅ (own) | ✅       |
-| Delete records | ❌      | ✅ (own) | ✅       |
-| Manage users   | ❌      | ❌       | ✅       |
+| Method | Endpoint                |
+| ------ | ----------------------- |
+| POST   | `/assignments`          |
+| GET    | `/assignments`          |
+| DELETE | `/assignments/:id`      |
+| GET    | `/assignments/my-users` |
+
+---
+
+## 🔐 Access Control Summary
+
+| Action           | Viewer  | Analyst      | Admin   |
+| ---------------- | ------- | ------------ | ------- |
+| View records     | ✅ (own) | ✅ (assigned) | ✅ (all) |
+| Create records   | ❌       | ✅            | ✅       |
+| Update records   | ❌       | ✅ (assigned) | ✅       |
+| Delete records   | ❌       | ✅ (assigned) | ✅       |
+| Dashboard access | ✅ (own) | ✅ (assigned) | ✅       |
+| Manage users     | ❌       | ❌            | ✅       |
 
 ---
 
@@ -207,32 +263,56 @@ npm run dev
 POST /records
 
 {
-  "amount": 500,
-  "type": "EXPENSE",
-  "category": "Food",
-  "date": "2026-04-03"
+  "amount": 1000,
+  "type": "INCOME",
+  "category": "Salary",
+  "date": "2026-04-01"
 }
 ```
 
 ---
 
-### Get Records with Filters
+### Filter Records
 
 ```
-GET /records?type=EXPENSE&category=Food&page=1&limit=10
+GET /records?type=EXPENSE&category=Food&startDate=2026-04-01&endDate=2026-04-30&page=1&limit=10
 ```
 
 ---
 
 ## 🧠 Design Decisions
 
-* **RBAC enforced at service layer** for security
-* **Soft delete** used for audit safety
-* **Pagination sanitized at service level** (never trust input)
-* **Modular architecture** for scalability
+* **RBAC enforced at service layer** → prevents bypassing via routes
+* **Soft delete implemented** → preserves audit history
+* **Token system persisted in DB** → secure refresh & revocation
+* **Modular architecture** → scalable and maintainable
+* **Validation centralized via middleware** → consistent input handling
+* **Dashboard built via aggregation queries** → efficient data processing
+
+---
+
+## ⚠️ Assumptions
+
+* Analyst can only access assigned users
+* Admin must provide `userId` when creating records
+* Viewer cannot perform any write operations
+* Deleted records are hidden but not permanently removed
+
+---
+
+## 🚀 Additional Enhancements
+
+* Google OAuth integration
+* Email verification & password reset
+* Token hashing & revocation system
+* Pagination & filtering
+* Soft delete implementation
+
+---
 
 ## 👨‍💻 Author
 
 **Pranav Pathare (Swapnil0717)**
 
 ---
+

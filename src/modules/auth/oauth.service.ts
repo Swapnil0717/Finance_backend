@@ -29,7 +29,7 @@ export const googleLogin = async (idToken: string) => {
         provider: "google",
         providerId: payload.sub,
         isEmailVerified: true,
-        role: "ANALYST",
+        role: "VIEWER",
       },
     });
   }

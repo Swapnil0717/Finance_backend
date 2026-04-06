@@ -12,7 +12,7 @@ import {
   generateToken,
   revokeToken,
 } from "./token.service";
-import { TokenType } from "@prisma/client";
+import { TokenType, Role } from "@prisma/client";
 import {
   sendVerificationEmail,
   sendResetPasswordEmail,
@@ -37,7 +37,7 @@ export const signup = async (data: SignupInput) => {
       email: data.email,
       password: hashedPassword,
       name: data.name,
-      role: "ANALYST",
+      role: Role.VIEWER, 
     },
   });
 
@@ -90,7 +90,7 @@ export const login = async (data: LoginInput) => {
 
   const payload = {
     id: user.id,
-    role: user.role,
+    role: user.role, 
   };
 
   const accessToken = generateAccessToken(payload);
@@ -101,7 +101,7 @@ export const login = async (data: LoginInput) => {
   return { accessToken, refreshToken };
 };
 
-// REFRESH
+// REFRESH TOKEN
 export const refreshAuth = async (token: string) => {
   const decoded = verifyRefreshToken(token);
 
