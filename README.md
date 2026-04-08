@@ -1,5 +1,18 @@
 # Finance Data Processing and Access Control Backend
 
+![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?logo=node.js&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-Framework-000000?logo=express&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![RBAC](https://img.shields.io/badge/Security-RBAC-red)
+![Zod](https://img.shields.io/badge/Validation-Zod-3E67B1)
+![Passport](https://img.shields.io/badge/Auth-Passport.js-34E27A?logo=passport&logoColor=black)
+![Nodemailer](https://img.shields.io/badge/Email-Nodemailer-009688)
+![Analytics](https://img.shields.io/badge/Feature-Analytics-blue)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+
 A production-ready backend system designed for managing financial records, enforcing role-based access control (RBAC), and delivering aggregated dashboard insights.
 
 This project demonstrates backend architecture, data modeling, secure authentication, and real-world business logic implementation.
